@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "prisma": "^7.9.1"
   },
   "scripts": {
     "start": "node server.js",
