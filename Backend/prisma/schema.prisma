@@ -20,7 +20,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  workspaces Workspace[]
+ ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
   members    WorkspaceMember[]
   messages   Message[]
 }
@@ -29,7 +29,7 @@ model Workspace {
   id        Int      @id @default(autoincrement())
   name      String
   ownerId   Int
-  owner     User     @relation(fields: [ownerId], references: [id])
+  owner User @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -43,7 +43,7 @@ model WorkspaceMember {
   workspaceId Int
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  role        String
+  role String
   joinedAt    DateTime  @default(now())
 
   @@unique([userId, workspaceId])

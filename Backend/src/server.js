@@ -9,11 +9,6 @@ const port = process.env.PORT|| 5000
 
 
 
-
-app.use("/",authMiddleware, createWorkspace)
-app.use("/api/auth", authRoutes);
-
-
 app.listen(port,()=>{
   console.log("Server is listening")
 })
