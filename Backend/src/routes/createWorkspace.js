@@ -10,7 +10,9 @@ const {
 const {
   createWorkspace,
   getMyWorkspaces,
-  getWorkspace
+  getWorkspace,
+  addWorkspaceMember,
+  removeWorkspaceMember
 } = require("../controllers/createWorkspace");
 
 const router = express.Router();
@@ -38,6 +40,17 @@ router.get(
   checkAuthentication,
   checkWorkspaceMembership,
   getWorkspace
+);
+
+
+// Add member to workspace
+router.post(
+  "/:workspaceId/members",
+  checkAuthentication,
+  checkWorkspaceMembership,
+  checkWorkspaceRole("OWNER"),
+  addWorkspaceMember,
+  removeWorkspaceMember
 );
 
 
