@@ -1,4 +1,4 @@
-const prisma = require("../lib/prisma");
+const prisma = require("../config/db");
 
 
 // Check whether the logged-in user belongs to the workspace

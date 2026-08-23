@@ -1,4 +1,4 @@
-const prisma = require("../lib/prisma");
+const prisma = require("../config/db");
 
 
 // Create a new workspace
