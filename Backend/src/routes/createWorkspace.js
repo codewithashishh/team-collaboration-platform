@@ -49,7 +49,16 @@ router.post(
   checkAuthentication,
   checkWorkspaceMembership,
   checkWorkspaceRole("OWNER"),
-  addWorkspaceMember,
+  addWorkspaceMember
+);
+
+
+// Remove member from workspace
+router.delete(
+  "/:workspaceId/members/:userId",
+  checkAuthentication,
+  checkWorkspaceMembership,
+  checkWorkspaceRole("OWNER"),
   removeWorkspaceMember
 );
 

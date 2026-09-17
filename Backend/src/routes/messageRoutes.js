@@ -3,7 +3,8 @@ const express = require("express");
 const checkAuthentication = require("../middleware/auth.middleware");
 
 const {
-  checkMessageChannelAccess
+  checkMessageChannelAccess,
+  checkMessageAccess
 } = require("../middleware/messageMiddleware");
 
 const {
@@ -36,6 +37,7 @@ router.get(
 router.get(
   "/messages/:messageId",
   checkAuthentication,
+  checkMessageAccess,
   getMessage
 );
 
@@ -43,6 +45,7 @@ router.get(
 router.patch(
   "/messages/:messageId",
   checkAuthentication,
+  checkMessageAccess,
   updateMessage
 );
 
@@ -50,6 +53,7 @@ router.patch(
 router.delete(
   "/messages/:messageId",
   checkAuthentication,
+  checkMessageAccess,
   deleteMessage
 );
 

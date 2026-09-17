@@ -1,8 +1,7 @@
 const bcrypt = require("bcrypt");
 const prisma = require("../config/db");
 const jwt = require("jsonwebtoken")
-const dotenv =require("dotenv")
-dotenv.config();
+const { jwtSecret } = require("../config/env");
 
 
 const register = async(req,res)=>{
@@ -91,7 +90,7 @@ const login = async(req,res)=>{
 
         const token = jwt.sign(
           payload,
-          process.env.JWT_SECRET,
+          jwtSecret,
           {
             expiresIn: "15m"
           }
@@ -143,7 +142,35 @@ const login = async(req,res)=>{
 
 
 const getMe = async(req,res)=>{
-   
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.user.userId
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error("Get current user error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error"
+    });
+  }
 }
 
 module.exports = {

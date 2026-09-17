@@ -11,6 +11,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum WorkspaceRole {
+  OWNER
+  MEMBER
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
@@ -35,6 +40,8 @@ model Workspace {
 
   members  WorkspaceMember[]
   channels Channel[]
+
+  @@index([ownerId])
 }
 
 model WorkspaceMember {
@@ -43,10 +50,11 @@ model WorkspaceMember {
   workspaceId Int
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  role String
+  role WorkspaceRole
   joinedAt    DateTime  @default(now())
 
   @@unique([userId, workspaceId])
+  @@index([workspaceId])
 }
 
 model Channel {
@@ -58,6 +66,8 @@ model Channel {
   updatedAt   DateTime  @updatedAt
 
   messages Message[]
+
+  @@unique([workspaceId, name])
 }
 
 model Message {
@@ -69,4 +79,6 @@ model Message {
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([channelId, createdAt])
 }
