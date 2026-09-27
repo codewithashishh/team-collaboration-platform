@@ -1,0 +1,147 @@
+:root {
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  color: #27312c;
+  background: #f7f8f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --paper: #f7f8f5;
+  --ink: #27312c;
+  --subtle: #7d8781;
+  --line: #e7e9e4;
+  --accent: #527d70;
+  --accent-dark: #42695d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #75a190;
+  outline-offset: 2px;
+}
+
+.auth-container {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(218 231 223 / 55%), transparent 42%),
+    var(--paper);
+}
+
+.auth-box {
+  width: min(100%, 390px);
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgb(39 49 44 / 5%);
+}
+
+.auth-box h1 {
+  margin: 0 0 30px;
+  color: var(--accent-dark);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.auth-box h2 {
+  margin: 0 0 18px;
+  color: var(--ink);
+  font-size: 22px;
+  letter-spacing: -0.04em;
+  text-align: center;
+}
+
+.auth-box input {
+  width: 100%;
+  min-height: 42px;
+  margin: 0 0 11px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.auth-box button[type="submit"] {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.auth-box button[type="submit"]:hover {
+  background: var(--accent-dark);
+}
+
+.auth-box button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.auth-box > p {
+  margin: 19px 0 0;
+  color: var(--subtle);
+  font-size: 12px;
+  text-align: center;
+}
+
+.link-button {
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 650;
+}
+
+.auth-box .error {
+  margin: 0 0 12px;
+  color: #a23e35;
+  font-size: 12px;
+  text-align: center;
+}
