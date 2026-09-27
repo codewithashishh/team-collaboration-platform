@@ -1,5 +1,10 @@
 const prisma = require("../config/db");
 const { getChannelForUser } = require("./socketAuthorization");
+const {
+  conversationRoom,
+  getConversationForUser,
+  getDirectMessageForUser
+} = require("../services/conversationAccess");
 
 const channelRoom = (channelId) => {
   return `channel:${channelId}`;
@@ -355,6 +360,310 @@ const socketHandlers = (io) => {
     });
 
     // ------------------------------------------------
+    // JOIN CONVERSATION
+    // ------------------------------------------------
+
+    socket.on("joinConversation", async (data, callback) => {
+      try {
+        const conversationId = parsePositiveInteger(data?.conversationId);
+
+        if (!conversationId) {
+          throw new Error("Invalid conversation ID");
+        }
+
+        await getConversationForUser(userId, conversationId);
+        const room = conversationRoom(conversationId);
+        socket.join(room);
+
+        if (callback) {
+          callback({
+            success: true,
+            conversationId
+          });
+        }
+      } catch (error) {
+        console.error("joinConversation error:", error.message);
+
+        if (callback) {
+          callback({
+            success: false,
+            message: error.message
+          });
+        }
+      }
+    });
+
+    // ------------------------------------------------
+    // LEAVE CONVERSATION
+    // ------------------------------------------------
+
+    socket.on("leaveConversation", async (data, callback) => {
+      try {
+        const conversationId = parsePositiveInteger(data?.conversationId);
+
+        if (!conversationId) {
+          throw new Error("Invalid conversation ID");
+        }
+
+        await getConversationForUser(userId, conversationId);
+        socket.leave(conversationRoom(conversationId));
+
+        if (callback) {
+          callback({
+            success: true,
+            conversationId
+          });
+        }
+      } catch (error) {
+        console.error("leaveConversation error:", error.message);
+
+        if (callback) {
+          callback({
+            success: false,
+            message: error.message
+          });
+        }
+      }
+    });
+
+    // ------------------------------------------------
+    // SEND DIRECT MESSAGE
+    // ------------------------------------------------
+
+    socket.on("sendDirectMessage", async (data, callback) => {
+      try {
+        const conversationId = parsePositiveInteger(data?.conversationId);
+        const content = typeof data?.content === "string"
+          ? data.content.trim()
+          : "";
+
+        if (!conversationId) {
+          throw new Error("Invalid conversation ID");
+        }
+
+        if (!content) {
+          throw new Error("Message content is required");
+        }
+
+        if (content.length > 5000) {
+          throw new Error("Message is too long");
+        }
+
+        await getConversationForUser(userId, conversationId);
+        const room = conversationRoom(conversationId);
+
+        if (!socket.rooms.has(room)) {
+          throw new Error(
+            "You must join the conversation before sending messages"
+          );
+        }
+
+        const message = await prisma.$transaction(async (tx) => {
+          const createdMessage = await tx.directMessage.create({
+            data: {
+              content,
+              userId,
+              conversationId
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true
+                }
+              }
+            }
+          });
+
+          await tx.conversation.update({
+            where: {
+              id: conversationId
+            },
+            data: {
+              updatedAt: new Date()
+            }
+          });
+
+          return createdMessage;
+        });
+
+        io.to(room).emit("directMessageCreated", message);
+
+        if (callback) {
+          callback({
+            success: true,
+            message
+          });
+        }
+      } catch (error) {
+        console.error("sendDirectMessage error:", error.message);
+
+        if (callback) {
+          callback({
+            success: false,
+            message: error.message
+          });
+        }
+      }
+    });
+
+    // ------------------------------------------------
+    // EDIT DIRECT MESSAGE
+    // ------------------------------------------------
+
+    socket.on("editDirectMessage", async (data, callback) => {
+      try {
+        const messageId = parsePositiveInteger(data?.messageId);
+        const content = typeof data?.content === "string"
+          ? data.content.trim()
+          : "";
+
+        if (!messageId) {
+          throw new Error("Invalid direct message ID");
+        }
+
+        if (!content) {
+          throw new Error("Message content is required");
+        }
+
+        if (content.length > 5000) {
+          throw new Error("Message is too long");
+        }
+
+        const { message, conversation } = await getDirectMessageForUser(
+          userId,
+          messageId
+        );
+
+        if (message.userId !== userId) {
+          throw new Error("You can only edit your own direct messages");
+        }
+
+        const room = conversationRoom(conversation.id);
+        if (!socket.rooms.has(room)) {
+          throw new Error("You must join the conversation first");
+        }
+
+        const updatedMessage = await prisma.$transaction(async (tx) => {
+          const updated = await tx.directMessage.update({
+            where: {
+              id: messageId
+            },
+            data: {
+              content
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true
+                }
+              }
+            }
+          });
+
+          await tx.conversation.update({
+            where: {
+              id: conversation.id
+            },
+            data: {
+              updatedAt: new Date()
+            }
+          });
+
+          return updated;
+        });
+
+        io.to(room).emit("directMessageUpdated", updatedMessage);
+
+        if (callback) {
+          callback({
+            success: true,
+            message: updatedMessage
+          });
+        }
+      } catch (error) {
+        console.error("editDirectMessage error:", error.message);
+
+        if (callback) {
+          callback({
+            success: false,
+            message: error.message
+          });
+        }
+      }
+    });
+
+    // ------------------------------------------------
+    // DELETE DIRECT MESSAGE
+    // ------------------------------------------------
+
+    socket.on("deleteDirectMessage", async (data, callback) => {
+      try {
+        const messageId = parsePositiveInteger(data?.messageId);
+
+        if (!messageId) {
+          throw new Error("Invalid direct message ID");
+        }
+
+        const { message, conversation } = await getDirectMessageForUser(
+          userId,
+          messageId
+        );
+
+        if (message.userId !== userId) {
+          throw new Error("You can only delete your own direct messages");
+        }
+
+        const room = conversationRoom(conversation.id);
+        if (!socket.rooms.has(room)) {
+          throw new Error("You must join the conversation first");
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.directMessage.delete({
+            where: {
+              id: messageId
+            }
+          });
+
+          await tx.conversation.update({
+            where: {
+              id: conversation.id
+            },
+            data: {
+              updatedAt: new Date()
+            }
+          });
+        });
+
+        io.to(room).emit("directMessageDeleted", {
+          messageId,
+          conversationId: conversation.id
+        });
+
+        if (callback) {
+          callback({
+            success: true,
+            messageId,
+            conversationId: conversation.id
+          });
+        }
+      } catch (error) {
+        console.error("deleteDirectMessage error:", error.message);
+
+        if (callback) {
+          callback({
+            success: false,
+            message: error.message
+          });
+        }
+      }
+    });
+
+    // ------------------------------------------------
     // TYPING
     // ------------------------------------------------
 
@@ -441,5 +750,10 @@ const socketHandlers = (io) => {
     });
   });
 };
+
+function parsePositiveInteger(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : null;
+}
 
 module.exports = socketHandlers;

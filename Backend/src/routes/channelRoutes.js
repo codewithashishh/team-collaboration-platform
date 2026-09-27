@@ -15,6 +15,7 @@ const {
   createChannel,
   getWorkspaceChannels,
   getChannel,
+  renameChannel,
   deleteChannel
 } = require("../controllers/channelController");
 
@@ -40,6 +41,14 @@ router.get(
   checkAuthentication,
   checkChannelMembership,
   getChannel
+);
+
+router.patch(
+  "/channels/:channelId",
+  checkAuthentication,
+  checkChannelMembership,
+  checkWorkspaceRole("OWNER"),
+  renameChannel
 );
 
 router.delete(

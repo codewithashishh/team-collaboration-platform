@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../services/api";
+import DirectMessages from "./DirectMessages";
 
 function Sidebar({
   user,
@@ -11,6 +12,8 @@ function Sidebar({
   setChannels,
   selectedChannel,
   setSelectedChannel,
+  selectedConversation,
+  onSelectConversation,
   onLogout,
 }) {
   const [showWorkspaceForm, setShowWorkspaceForm] = useState(false);
@@ -35,6 +38,7 @@ function Sidebar({
     clearFeedback();
     setSelectedWorkspace(workspace);
     setSelectedChannel(null);
+    onSelectConversation(null);
     setChannels([]);
 
     try {
@@ -56,7 +60,13 @@ function Sidebar({
         setError(getErrorMessage(requestError, "Could not open this workspace"));
       }
     }
-  }, [clearFeedback, setChannels, setSelectedChannel, setSelectedWorkspace]);
+  }, [
+    clearFeedback,
+    onSelectConversation,
+    setChannels,
+    setSelectedChannel,
+    setSelectedWorkspace,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -125,6 +135,7 @@ function Sidebar({
       const channel = response.data.channel;
       setChannels((items) => [...items, channel]);
       setSelectedChannel(channel);
+      onSelectConversation(null);
       setChannelName("");
       setShowChannelForm(false);
       setNotice("Channel created.");
@@ -140,6 +151,7 @@ function Sidebar({
     try {
       const response = await api.get(`/channels/${channel.id}`);
       setSelectedChannel(response.data.channel);
+      onSelectConversation(null);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Could not open this channel"));
     }
@@ -159,6 +171,57 @@ function Sidebar({
       setNotice("Channel deleted.");
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Could not delete channel"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function renameWorkspace() {
+    const name = window.prompt("Rename workspace", selectedWorkspace?.name || "");
+    if (!selectedWorkspace || !name?.trim()) return;
+
+    setBusy(true);
+    clearFeedback();
+    try {
+      const response = await api.patch(`/workspaces/${selectedWorkspace.id}`, {
+        name: name.trim(),
+      });
+      const workspace = {
+        ...response.data.workspace,
+        role: selectedWorkspace.role,
+      };
+      setSelectedWorkspace(workspace);
+      setWorkspaces((items) =>
+        items.map((item) => (item.id === workspace.id ? workspace : item)),
+      );
+      setNotice("Workspace renamed.");
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Could not rename workspace"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function renameChannel(channel) {
+    const name = window.prompt("Rename channel", channel.name);
+    if (!name?.trim()) return;
+
+    setBusy(true);
+    clearFeedback();
+    try {
+      const response = await api.patch(`/channels/${channel.id}`, {
+        name: name.trim(),
+      });
+      const renamedChannel = response.data.channel;
+      setChannels((items) =>
+        items.map((item) => (item.id === channel.id ? renamedChannel : item)),
+      );
+      if (selectedChannel?.id === channel.id) {
+        setSelectedChannel(renamedChannel);
+      }
+      setNotice("Channel renamed.");
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Could not rename channel"));
     } finally {
       setBusy(false);
     }
@@ -312,6 +375,14 @@ function Sidebar({
             <div className="workspace-settings">
               {isOwner ? (
                 <>
+                  <button
+                    className="text-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={renameWorkspace}
+                  >
+                    Rename workspace
+                  </button>
                   <h3>Manage members</h3>
                   <form className="inline-form" onSubmit={addMember}>
                     <input
@@ -402,6 +473,16 @@ function Sidebar({
                 </button>
                 {isOwner && (
                   <button
+                    className="text-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => renameChannel(channel)}
+                  >
+                    Rename
+                  </button>
+                )}
+                {isOwner && (
+                  <button
                     className="channel-delete"
                     type="button"
                     title={`Delete #${channel.name}`}
@@ -426,6 +507,14 @@ function Sidebar({
           <p>Select a workspace to see its channels.</p>
         </div>
       )}
+
+      <div className="nav-divider" />
+
+      <DirectMessages
+        user={user}
+        selectedConversationId={selectedConversation?.id}
+        onSelect={onSelectConversation}
+      />
 
       <div className="sidebar-feedback" aria-live="polite">
         {error && <p className="error">{error}</p>}

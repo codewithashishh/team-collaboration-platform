@@ -11,6 +11,7 @@ const {
   createWorkspace,
   getMyWorkspaces,
   getWorkspace,
+  renameWorkspace,
   addWorkspaceMember,
   removeWorkspaceMember
 } = require("../controllers/createWorkspace");
@@ -40,6 +41,15 @@ router.get(
   checkAuthentication,
   checkWorkspaceMembership,
   getWorkspace
+);
+
+// Rename workspace
+router.patch(
+  "/:workspaceId",
+  checkAuthentication,
+  checkWorkspaceMembership,
+  checkWorkspaceRole("OWNER"),
+  renameWorkspace
 );
 
 

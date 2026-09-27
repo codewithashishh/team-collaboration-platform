@@ -2,6 +2,7 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 
 const { port } = require("./config/env");
+const { allowedOrigins } = require("./config/cors");
 const app = require("./app");
 
 const socketAuth = require("./socket/socketAuth");
@@ -13,10 +14,12 @@ const httpServer = createServer(app);
 // Create Socket.IO server
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true
   }
 });
+
+app.set("io", io);
 
 // Socket authentication
 io.use(socketAuth);

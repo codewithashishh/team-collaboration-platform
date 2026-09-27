@@ -6,6 +6,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Sidebar from "./components/Sidebar";
 import Chat from "./components/Chat";
+import DirectMessageChat from "./components/DirectMessageChat";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -15,6 +16,12 @@ function App() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [channels, setChannels] = useState([]);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+
+  const selectConversation = useCallback((conversation) => {
+    setSelectedConversation(conversation);
+    setSelectedChannel(null);
+  }, []);
 
   const connectSocket = useCallback(() => {
     if (!socket.connected) {
@@ -64,6 +71,7 @@ function App() {
       setSelectedWorkspace(null);
       setChannels([]);
       setSelectedChannel(null);
+      setSelectedConversation(null);
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -99,14 +107,24 @@ function App() {
         setChannels={setChannels}
         selectedChannel={selectedChannel}
         setSelectedChannel={setSelectedChannel}
+        selectedConversation={selectedConversation}
+        onSelectConversation={selectConversation}
         onLogout={handleLogout}
       />
-      <Chat
-        key={selectedChannel?.id || "no-channel"}
-        user={user}
-        workspace={selectedWorkspace}
-        channel={selectedChannel}
-      />
+      {selectedConversation ? (
+        <DirectMessageChat
+          key={`conversation-${selectedConversation.id}`}
+          user={user}
+          conversation={selectedConversation}
+        />
+      ) : (
+        <Chat
+          key={selectedChannel?.id || "no-channel"}
+          user={user}
+          workspace={selectedWorkspace}
+          channel={selectedChannel}
+        />
+      )}
     </div>
   );
 }

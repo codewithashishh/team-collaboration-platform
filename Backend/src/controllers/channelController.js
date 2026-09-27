@@ -118,6 +118,60 @@ const getChannel = async (req, res) => {
   }
 };
 
+const renameChannel = async (req, res) => {
+  try {
+    const name = req.body?.name;
+
+    if (typeof name !== "string" || name.trim() === "") {
+      return res.status(400).json({
+        message: "Channel name is required"
+      });
+    }
+
+    const existingChannel = await prisma.channel.findFirst({
+      where: {
+        workspaceId: req.channel.workspaceId,
+        name: name.trim(),
+        NOT: {
+          id: req.channel.id
+        }
+      }
+    });
+
+    if (existingChannel) {
+      return res.status(409).json({
+        message: "Channel already exists"
+      });
+    }
+
+    const channel = await prisma.channel.update({
+      where: {
+        id: req.channel.id
+      },
+      data: {
+        name: name.trim()
+      }
+    });
+
+    return res.status(200).json({
+      message: "Channel renamed successfully",
+      channel
+    });
+  } catch (error) {
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        message: "Channel already exists"
+      });
+    }
+
+    console.error("Rename channel error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+};
+
 const deleteChannel = async (req, res) => {
   try {
     const channelId = Number(req.params.channelId);
@@ -163,5 +217,6 @@ module.exports = {
   createChannel,
   getWorkspaceChannels,
   getChannel,
+  renameChannel,
   deleteChannel
 };

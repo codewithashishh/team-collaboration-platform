@@ -116,6 +116,38 @@ const getWorkspace = async (req, res) => {
   }
 };
 
+const renameWorkspace = async (req, res) => {
+  try {
+    const name = req.body?.name;
+
+    if (typeof name !== "string" || name.trim() === "") {
+      return res.status(400).json({
+        message: "Workspace name is required"
+      });
+    }
+
+    const workspace = await prisma.workspace.update({
+      where: {
+        id: req.workspaceMembership.workspaceId
+      },
+      data: {
+        name: name.trim()
+      }
+    });
+
+    return res.status(200).json({
+      message: "Workspace renamed successfully",
+      workspace
+    });
+  } catch (error) {
+    console.error("Rename workspace error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+};
+
 
 // Add member to workspace
 const addWorkspaceMember = async (req, res) => {
@@ -244,6 +276,7 @@ module.exports = {
   createWorkspace,
   getMyWorkspaces,
   getWorkspace,
+  renameWorkspace,
   addWorkspaceMember,
   removeWorkspaceMember
 };
